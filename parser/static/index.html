@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html ng-app="subnetter">
+<head>
+    <!-- META -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="index,follow">
+    <meta name="description" content="Visual design aid for subnets and network planner for IP space and IP schema">
+
+    <title>parser</title>
+
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="bower_components/highlightjs/styles/github-gist.css">
+
+
+    <script type="text/javascript" src="bower_components/ace-builds/src-min-noconflict/ace.js"></script>
+    <script type="text/javascript" src="bower_components/angular/angular.js"></script>
+    <script type="text/javascript" src="bower_components/angular-sanitize/angular-sanitize.js"></script>
+    <script type="text/javascript" src="bower_components/angular-ui-ace/ui-ace.js"></script>
+    <script type="text/javascript" src="bower_components/highlightjs/highlight.pack.js"></script>
+    <script type="text/javascript" src="bower_components/angular-highlightjs/angular-highlightjs.js"></script>
+
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <script type="text/javascript" src="js/js-yaml.min.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
+
+</head>
+<body ng-controller="mainController">
+  <div class="grid">
+        <div class="equalW" ui-ace="configOptions" ng-model="config"></div>
+        <div class="equalW" ui-ace="templateOptions" ng-model="template"></div>
+        <div class="equalW" ><pre class="bggrey" ng-bind-html=result1></pre></div>
+        <div class="equalW" hljs hljs-source="result2" hljs-language="yaml"></div>
+</body>
+
+<script>
+
+angular
+    .module("subnetter", ['ui.ace', 'ngSanitize', 'hljs'])
+    .controller("mainController", mainController);
+
+mainController.$inject = ["$scope", "$http", "$sce", "$log", "$window"];
+
+function mainController($scope, $http, $sce, $log, $window) {
+  $scope.result1 = '';
+  $scope.result2 = '{ foo: bar }';
+  $scope.config = '';
+  $scope.template ='';
+  $scope.configOptions = {
+    onLoad: function (_ace) {
+      _ace.commands.addCommand({
+        name: 'Parse',
+        bindKey: {win: 'Ctrl-shift-r', mac: 'Command-shift-r'},
+        exec: function () { $scope.sendPost() }
+      });
+      _ace.setOptions({
+        fontFamily: "monospace",
+        fontSize: "10pt"
+      });
+      _ace.getSession().setMode("ace/mode/text");
+      _ace.$blockScrolling = Infinity;
+    }
+  };
+
+  $scope.templateOptions = {
+    onLoad: function (_ace) {
+      _ace.commands.addCommand({
+        name: 'Parse',
+        bindKey: {win: 'Ctrl-shift-r', mac: 'Command-shift-r'},
+        exec: function () { $scope.sendPost() }
+      });
+      _ace.commands.addCommand({
+        name: 'Sort',
+        bindKey: {win: 'Ctrl-shift-s', mac: 'Command-shift-s'},
+        exec: function () { $scope.sendSort() }
+      });
+      _ace.setOptions({
+        fontFamily: "monospace",
+        fontSize: "10pt",
+        tabSize: 2,
+        useSoftTabs: true
+      });
+      _ace.getSession().setMode("ace/mode/yaml");
+      _ace.$blockScrolling = Infinity;
+    }
+  };
+
+  $scope.sendPost = function() {
+    var data = {
+      config: $scope.config,
+      template: $scope.template
+    }
+    $http.post("/api/parse", data)
+      .then(
+         function(response){
+           console.log(response.data)
+           $scope.result1 = response.data.config
+           $scope.result2 = response.data.result
+         },
+         function(response){
+           console.log(response)
+         }
+      );
+  };
+  $scope.sendSort = function() {
+    var data = {
+      template: $scope.template
+    }
+    $http.post("/api/sort", data)
+      .then(
+         function(response){
+           console.log(response.data)
+           $scope.template = response.data.template
+         },
+         function(response){
+           console.log(response)
+         }
+      );
+  };
+  var init = function () {
+    $http.get("seassclrt001.starbucks.net.cfg")
+      .then(
+         function(response){
+           $scope.config = response.data;
+         },
+         function(response){
+           console.log(response)
+         }
+      );
+  };
+  init();
+};
+
+</script>
+
+</html>
