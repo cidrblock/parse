@@ -2,191 +2,435 @@
 
 NDCP is a network device config parser. Given either a snippet of configuration or a full configuration along with a yaml file describing the config, a visual representation of the parsed config and resulting structured data file in yaml format will be presented.
 
+***This is an early release which has not been fully tested or documented. Please use with caution.  The code is undocumented and has little error checking.***
 
-![screenshot](https://github.com/cidrblock/subnetter/raw/master/screenshot.png)
+![screenshot](https://github.com/cidrblock/parse/raw/master/screenshot.png)
 
+## Dependancies
 
-## Try it now
+1. bower
+2. python
+3. flask (pip install)
 
-http://ipv4sub.net
+## Installing
 
-1. Paste this in as a template
-
-
-```yaml
-name: "My network design"   # The name of the root node
-root: 10.200.0.0/22         # The root network to subnet
-type: dc aggregate network  # The type (used in the legend)
-site: East Coast DC         # A variable to be used later
-location: Washington, DC    # Another variable to be used later
-spec:
-    - name: "{{site}}-{{location}}-servers-1"
-      type: subnet
-    - name: "{{site}}-{{location}}-servers-2"
-      type: subnet
-    - name: "{{site}}-{{location}}-servers-3"
-      type: subnet
-    - name: "{{site}}-{{location}}-servers-4"
-      type: subnet
+1. Clone this repo
+2. Install dependancies
 ```
-2. Click [convert]
-3. Click [render]
-4. Fine tune the yaml and repeat
+cd parse
+bower install
+```
+3. Start the server
+```
+./server.py
+```
+Point your web browser to http://localhost:5000/
 
+## Overview
+
+The screen is broken into four sections:
+1. The config or configlet to parse
+2. The parsing template in yaml format
+3. The post parsed config
+4. The resulting structured data
+
+Once sections one and two are populated, the submit the config with ctrl/command-shift-r.
+
+Additionally, the parsing template can be sorted with ctrl/command-shift-s.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+The parsing template is best explained with examples. Parsing happens left to right, top to bottom in the config.
 
-### Prerequisities
+The parsing template is made up of lists and dictionaries, keywords and variables.
 
-You will need node.js and npm installed.  (or a suitable web server to host the files, all content is static)
+### Example 1:
 
-https://nodejs.org/en/download/
+Given the following configlet and template:
 
-
-### Installing
-
-Clone this repository.
-
-change directories and run the project.
 ```
-cd subnetter
-npm install
-node app.js
+!
+logging buffered informational
+
+!
+
+!
 ```
-
-Open your browser
 ```
-http://localhost:8080
-```
+config:
+  remove_lines:
+  - ^!.*$
+  - ^$
+global_keywords:
+  logging:
+    buffered:
 
-End with an example of getting some data out of the system or using it for a little demo
-
-
-
-## Development
-
-Rebuilding the javascript and css files:
-```
-bower install
-gulp bower
 ```
 
-## Usage
+Blank lines will be removed, and the parser will look for the the keyword `logging` followed by `buffered`.  The following result will be produced:
 
-Subnetter starts with a yaml file describing the network.
+```
+logging:
+  buffered:
+    values:
+    - informational
+```
+Anything not parsed, will simple reside in a list of values.
 
-Example:
+### Example 2:
 
-```yaml
-name: "My network design"   # The name of the root node
-root: 10.200.0.0/22         # The root network to subnet
-type: dc aggregate network  # The type (used in the legend)
-site: East Coast DC         # A variable to be used later
-location: Washington, DC    # Another variable to be used later
-spec:
-    - name: "{{site}}-{{location}}-servers-1"
-      type: subnet
-    - name: "{{site}}-{{location}}-servers-2"
-      type: subnet
-    - name: "{{site}}-{{location}}-servers-3"
-      type: subnet
-    - name: "{{site}}-{{location}}-servers-4"
-      type: subnet
+Variables can be used instead of hard-coded keywords.  Variables start with a `$`.  The variable (less the `$`)
+will be the keyword in the resulting output.
+
+
+Configlet:
+```
+logging buffered informational
+logging console informational
+logging monitor informational
+```
+Template:
+```
+config:
+  remove_lines:
+  - ^!.*$
+  - ^$
+global_keywords:
+  logging:
+  - $type
+```
+Result:
+```
+logging:
+- type: buffered
+  values:
+  - informational
+- type: console
+  values:
+  - informational
+- type: monitor
+  values:
+  - informational
+```
+### Example 3:
+
+By default, the remainder of the line will be placed in a list of values as above.  This can be overwritten with a remainders dictionary.
+
+Configlet:
+
+```
+service timestamps debug datetime msec localtime show-timezone
+service timestamps log datetime msec localtime show-timezone
+
 ```
 
-Child subnet masks will automatically be determined based on the root network.  The number of subnets will also be rounded up to fill the IP block.
+Template:
 
-Example:
+```
+config:
+  remove_lines:
+  - ^!.*$
+  - ^$
+global_keywords:
+  service:
+    timestamps:
+    - $type
+    - remainder: modify
+```
+Result:
 
-```yaml
-name: "My network design"   # The name of the root node
-root: 10.200.0.0/22         # The root network to subnet
-type: dc aggregate network  # The type (used in the legend)
-site: East Coast DC         # A variable to be used later
-location: Washington, DC    # Another variable to be used later
-spec:
-    - name: "{{site}}-{{location}}-servers-1"
-      type: container
-      children:
-        - name: child network
-          type: subnet       # processing stops at subnet
-        - name: child network
-          type: subnet
-          children:
-            - name: will never be seen
-              type: something # because the parent is a 'subnet'
-        - name: child network
-          type: subnet
-    - name: "{{site}}-{{location}}-servers-2"
-      type: type2             # types are used in the legend  
-    - name: "{{site}}-{{location}}-servers-3"
-      type: type3
+```
+service:
+  timestamps:
+  - modify:
+    - datetime msec localtime show-timezone
+    type: debug
+  - modify:
+    - datetime msec localtime show-timezone
+    type: log
 ```
 
-Complex networks can be designed using yaml anchor (&) and reference (*) labels.
+if the remainder keyword is plural (ends in s), the remainder will be split into a list of values rather than a string.
 
-Example:
-
-```yaml
-site1: Seattle, WA
-site2: Portland, OR
-site3: Denver, CO
-site4: New York, NY
-site5: Tampa, FL
-
-adminblock: &adminblock
-  - name: management systems
-    type: subnet
-  - name: loopback addresses
-    type: subnet
-
-
-office: &office
-  - name: Users
-    type: subnet
-  - name: Phones
-    type: subnet
-  - name: Network Admin
-    type: admin block
-    children: *adminblock
-
-
-name: "My network design"   # The name of the root node
-root: 10.200.0.0/20         # The root network to subnet
-type: WAN                   # The type (used in the legend)
-spec:
-    - name: "{{site1}}"
-      type: container
-      children: *office
-    - name: "{{site2}}"
-      type: container
-      children: *office
-    - name: "{{site3}}"
-      type: container
-      children: *office
-    - name: "{{site4}}"
-      type: container
-      children: *office
-    - name: "{{site5}}"
-      type: container
-      children: *office
+Template:
 ```
+config:
+  remove_lines:
+  - ^!.*$
+  - ^$
+global_keywords:
+  service:
+    timestamps:
+    - $type
+    - remainder: modifiers
+```
+Result:
+```
+service:
+  timestamps:
+  - modifiers:
+    - datetime
+    - msec
+    - localtime
+    - show-timezone
+    type: debug
+  - modifiers:
+    - datetime
+    - msec
+    - localtime
+    - show-timezone
+    type: log
+```
+### Example 4:
 
-*Try changing the root mask to /19 so the user and phone networks become a /24.*
+Multiline configlets can be parsed into lists of entries.
 
+Configlet:
+```
+access-list 5 permit 10.0.0.1
+access-list 5 permit 10.0.0.2
+access-list 5 permit 10.0.0.3
+access-list 5 permit 10.0.0.4
+
+access-list 16 deny   10.1.0.0 0.0.0.255
+access-list 16 deny   10.2.0.0 0.0.0.255
+access-list 16 permit any
+```
+Template:
+```
+config:
+  remove_lines:
+  - ^!.*$
+  - ^$
+global_keywords:
+  access-list:
+    $number:
+    - $action
+    - $src
+    - $src_mask
+```
+Result:
+```
+access-list:
+- entries:
+  - action: permit
+    src: 10.0.0.1
+  - action: permit
+    src: 10.0.0.2
+  - action: permit
+    src: 10.0.0.3
+  - action: permit
+    src: 10.0.0.4
+  number: '5'
+- entries:
+  - action: deny
+    src: 10.1.0.0
+    src_mask: 0.0.0.255
+  - action: deny
+    src: 10.2.0.0
+    src_mask: 0.0.0.255
+  - action: permit
+    src: any
+  number: '16'
+```
+In the case the access-list number was stored as number: XXX and the entries are a list of entries, each with a dictionary of values.  The line was parsed left to right using the list of variables.
+
+### Example 5:
+
+Keywords can be removed from the config by duplicating variable names. For instance, there is little value in storing the `use-vrf` keyword in the result.
+
+Configlet:
+```
+ntp server 10.1.1.2 use-vrf blue
+ntp server 10.1.1.3 use-vrf red
+ntp server 10.1.1.4 use-vrf green
+ntp server 10.1.1.5 use-vrf yellow
+```
+Template:
+```
+config:
+  remove_lines:
+  - ^!.*$
+  - ^$
+global_keywords:
+  ntp:
+    server:
+      $ip:
+      - $vrf
+      - $vrf
+```
+Result:
+```
+ntp:
+  server:
+  - entries:
+    - vrf: blue
+    ip: 10.1.1.2
+  - entries:
+    - vrf: red
+    ip: 10.1.1.3
+  - entries:
+    - vrf: green
+    ip: 10.1.1.4
+  - entries:
+    - vrf: yellow
+    ip: 10.1.1.5
+```
+Because the `$vrf` keyword was repeated, it was initially set to `use-vrf` but then overwritten with the vrf name.
+
+### Example 6:
+
+Working with contexts.  (indented configuration sections).  Parsing a line's context is only different than parsing global configuration in that the context's parsing keywords should be stored in the context keyword.
+
+Configlet:
+```
+ip access-list standard test
+ permit 1.1.1.1
+ permit 1.1.1.3
+ permit 1.1.1.2
+ permit 1.1.1.4
+
+interface GigabitEthernet0/0/1
+ description uplink
+ ip address 10.0.0.1 255.255.255.0
+ ip flow ingress
+ ip flow egress
+ ip pim sparse-dense-mode
+ negotiation auto
+ service-policy input qo-global-core-ingress-lan
+!
+interface GigabitEthernet2/10
+ description connection to switch
+ switchport
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 5
+ switchport trunk allowed vlan 99,2199,2299,2399,2499,2599,2699
+ switchport trunk allowed vlan add 2799,2899,2999,3099,3199,3299,3399
+ switchport trunk allowed vlan add 3485,3499,3599,3699
+ switchport mode trunk
+ speed nonegotiate
+ mls qos trust dscp
+```
+Template:
+```
+config:
+  remove_lines:
+  - ^!.*$
+  - ^$
+global_keywords:
+  interface:
+  - $name
+  - context:
+      description:
+      ip:
+        address:
+        - $ip
+        - $mask
+        flow:
+        - $direction
+        pim:
+        - $mode
+      mls:
+      negotiation:
+      service-policy:
+      - $direction
+      - $policy_name
+      speed:
+      switchport:
+        mode:
+        trunk:
+          allowed:
+          encapsulation:
+          native:
+          - $vlan
+          - $vlan
+  ip:
+    access-list:
+      standard:
+      - $name
+      - context:
+        - $action
+        - $src
+        - $src_mask
+```
+Result:
+```
+interface:
+- context:
+    description:
+      values:
+      - uplink
+    ip:
+      address:
+      - ip: 10.0.0.1
+        mask: 255.255.255.0
+      flow:
+      - direction: ingress
+      - direction: egress
+      pim:
+      - mode: sparse-dense-mode
+    negotiation:
+      values:
+      - auto
+    service-policy:
+    - direction: input
+      policy_name: qo-global-core-ingress-lan
+  name: GigabitEthernet0/0/1
+- context:
+    description:
+      values:
+      - connection to switch
+    mls:
+      values:
+      - qos trust dscp
+    speed:
+      values:
+      - nonegotiate
+    switchport:
+      mode:
+        values:
+        - trunk
+      trunk:
+        allowed:
+          values:
+          - vlan 99,2199,2299,2399,2499,2599,2699
+          - vlan add 2799,2899,2999,3099,3199,3299,3399
+          - vlan add 3485,3499,3599,3699
+        encapsulation:
+          values:
+          - dot1q
+        native:
+        - vlan: '5'
+  name: GigabitEthernet2/10
+ip:
+  access-list:
+    standard:
+    - context:
+      - action: permit
+        src: 1.1.1.1
+      - action: permit
+        src: 1.1.1.3
+      - action: permit
+        src: 1.1.1.2
+      - action: permit
+        src: 1.1.1.4
+      name: test
+```
+Each context for each global line is stored as `context` in the result.
+
+All other parsing rules apply.
+
+Note: The 'trunk allowed' lines above are one of the use cases not covered, that is conditional keywords.  Two of the lines have the `add`, one does not.
 
 ## Built With
 
 * angular
-* angular-bootstrap
+* python
 * angular-ui-ace
-* express
+* flask
 * bower
-* gulp
-* d3.js
 * ace editor
+* highlightjs
 
 ## Contributing
 
@@ -206,4 +450,4 @@ This project is licensed under the MIT License. [MIT License](http://www.opensou
 
 ## Acknowledgments
 
-* D3.js, Angular, Bootstrap, Ace
+* Angular, Ace, Python
