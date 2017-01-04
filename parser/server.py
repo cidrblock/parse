@@ -45,12 +45,24 @@ def remove_lines(lines,regexs):
         lines = [i for i in lines if not regex.search(i)]
     return lines
 
+def next_is(entry):
+    if isinstance(entry,dict):
+        return 'dict'
+    if isinstance(entry,list):
+        return 'list'
+    else:
+        print "Error: next is nothing"
+
 def parse(lines, global_keywords, prepend = None):
     response = {}
-    parsed = {}
+    # check what we came in with, could be a list if a context
+    if isinstance(global_keywords, dict):
+        parsed = {}
+    if isinstance(global_keywords, list):
+        parsed = []
     lines_index = 0
     lines_length = len(lines)
-    while lines_index != lines_length:
+    while lines_index < lines_length:
         current_root = global_keywords
         parsed_root = parsed
         if not lines[lines_index].startswith(' '):
@@ -67,93 +79,124 @@ def parse(lines, global_keywords, prepend = None):
             else:
                 negate = False
             line_length = len(line_parts)
+            depth = 0
             while line_index < line_length:
-                if current_root and line_parts[line_index] in current_root:
-                    new_line.append('<span class="keyword">' + line_parts[line_index] + '</span>')
-                    if not line_parts[line_index] in parsed_root:
-                        if current_root[line_parts[line_index]] and isinstance(current_root[line_parts[line_index]], dict):
-                            vars = [k for k in  current_root[line_parts[line_index]] if k.startswith('$') and k != '$word']
-                            if vars:
-                                parsed_root[line_parts[line_index]] = []
-                            else:
-                                parsed_root[line_parts[line_index]] = {}
+                working_word = line_parts[line_index]
+                crt = type(current_root).__name__
+                wildcard = False
+                gobble = False
+                remainer_specified = False
+                remainder_word = 'values'
+                if crt == 'dict':
+                    vars = [k for k in  current_root if k.startswith('$')]
+                    if vars:
+                        if len(vars) != 1:
+                            print "Error: more than one $ in current root"
                         else:
-                            parsed_root[line_parts[line_index]] = {}
-                    current_root = current_root[line_parts[line_index]]
-                    parsed_root = parsed_root[line_parts[line_index]]
-                    line_index += 1
-                elif current_root and any([k.startswith('$') for k in [s for s in current_root if isinstance(s,str)]]):
-                    if isinstance(current_root, dict):
-                        vars = [k for k in  current_root if k.startswith('$')]
-                        existing = [d for d in  parsed_root if d[vars[0][1:]] == line_parts[line_index] ]
-                        if not existing:
-                            parsed_root.append({ vars[0][1:]: line_parts[line_index] })
-                        existing = [d for d in  parsed_root if d[vars[0][1:]] == line_parts[line_index] ]
-                        new_line.append('<span class="value">' + line_parts[line_index] + '</span>')
-                        current_root = current_root[vars[0]]
-                        parsed_root = existing[0]
-                        line_index += 1
-                    if isinstance(current_root, list):
-                        remainder = 'string'
-                        dicts = [d for d in current_root if isinstance(d,dict)]
-                        for entry in dicts:
-                            for key in entry:
-                                if key == 'remainder':
-                                    remainder = entry['remainder']
-                        strings = [s for s in current_root if isinstance(s,str)]
-                        vars = [k for k in strings if k.startswith('$')]
-                        vars_index = 0
-                        vars_length = len(vars)
-                        entry = {}
-                        while vars_index < vars_length:
-                            if line_index + vars_index > line_length - 1:
-                                entry[vars[vars_index][1:]] = ''
-                                vars_index += 1
-                            else:
-                                if vars[vars_index][1:].endswith('s'):
-                                    keyword = vars[vars_index][1:]
-                                    entry[keyword] = []
-                                    start = vars_index
-                                    for line_part in line_parts[line_index + vars_index:]:
-                                        entry[keyword].append(line_parts[line_index + vars_index])
-                                        new_line.append('<span class="value">' + line_parts[line_index + vars_index] + '</span>')
-                                        vars_index += 1
-                                    line_index = line_length
-                                else:
-                                    entry[vars[vars_index][1:]] = line_parts[line_index + vars_index]
-                                    new_line.append('<span class="value">' + line_parts[line_index + vars_index] + '</span>')
-                                    vars_index += 1
-                        if line_index + vars_length < line_length:
-                            entry[remainder] = (' ').join(line_parts[line_index + vars_length:]).strip()
-                            new_line.append('<span class="value">' + entry[remainder] + '</span>')
-                        if not 'lines' in parsed_root:
-                            parsed_root['lines'] = []
-                        parsed_root['lines'].append(entry)
-                        line_index = line_length
-                else:
-                    value = (' ').join(line_parts[line_index:])
-                    if line_index > 0:
-                        new_line.append('<span class="value">' + value + '</span>')
-                        if not 'lines' in parsed_root:
-                            parsed_root['lines'] = []
-                        parsed_root['lines'].append({ 'string': value })
+                            wildcard = True
+                            wildcard_actual = vars[0]
+                            wildcard_parsed = vars[0][1:]
+                    if 'remainder'in current_root:
+                        remainer_specified = True
+                        remainder_word = current_root['remainder']
+                if crt == 'list':
+                    cr_strings = [s for s in current_root if isinstance(s,str)]
+                    cr_dicts = [d for d in current_root if isinstance(d,dict)]
+                    if line_index < depth + len(cr_strings):
+                        if cr_strings[line_index - depth].startswith('$'):
+                            wildcard = True
+                            wildcard_actual = cr_strings[line_index - depth]
+                            wildcard_parsed = cr_strings[line_index - depth][1:]
                     else:
-                        new_line.append('<span class="not_parsed">' + value + '</span>')
-                    line_index = line_length
-            if negate:
-                if 'lines' in parsed_root:
-                    parsed_root['lines'][-1]['negate'] = True
+                        remainer_specified = True
+                        for cr_dict in cr_dicts:
+                            remainder_word = cr_dict.get('remainder', remainder_word)
+                if current_root:
+                    if crt == 'dict' and working_word in current_root:
+                        if not working_word in parsed_root:
+                            if isinstance(current_root[working_word], dict):
+                                vars = [k for k in current_root[working_word].keys() if k.startswith('$')]
+                                if vars:
+                                    if len(vars) != 1:
+                                        print "Error: more than one $ in current root"
+                                    else:
+                                        parsed_root[working_word] = []
+                                else:
+                                    parsed_root[working_word] = {}
+                            if isinstance(current_root[working_word], list):
+                                parsed_root[working_word] = []
+                            if current_root[working_word] is None:
+                                parsed_root[working_word] = {}
+
+                        parsed_root = parsed_root[working_word]
+                        current_root = current_root[working_word]
+                        depth += 1
+                        new_line.append('<span class="keyword">' + working_word + '</span>')
+                        line_index += 1
+
+                    elif crt == 'dict' and wildcard:
+                        if isinstance(parsed_root, dict):
+                            parsed_root[working_word] = {}
+                            parsed_root = parsed_root[working_word]
+                        if isinstance(parsed_root, list):
+                            exisiting = None
+                            for entry in parsed_root:
+                                if entry.get(wildcard_parsed) == working_word:
+                                    exisiting = entry
+                            if exisiting:
+                                parsed_root = exisiting['entries']
+                            else:
+                                parsed_root.append({ wildcard_parsed: working_word, 'entries': [] })
+                                parsed_root = parsed_root[-1]['entries']
+                        current_root = current_root[wildcard_actual]
+                        depth += 1
+                        new_line.append('<span class="value">' + working_word + '</span>')
+                        line_index += 1
+                    elif crt == 'list' and wildcard:
+                        if isinstance(parsed_root, list):
+                            parsed_root.append({})
+                            parsed_root = parsed_root[-1]
+                        parsed_root[wildcard_parsed] = working_word
+                        new_line.append('<span class="value">' + working_word + '</span>')
+                        line_index += 1
+                    else:
+                      gobble = True
                 else:
+                    gobble = True
+                if gobble:
+                    if remainder_word.endswith('s') and remainder_word != 'values':
+                        parsed_root[remainder_word] = line_parts[line_index:]
+                        for word in line_parts[line_index:]:
+                            new_line.append('<span class="value">' + word + '</span>')
+                    else:
+                        if not remainder_word in parsed_root:
+                            parsed_root[remainder_word] = []
+                        parsed_root[remainder_word].append((' ').join(line_parts[line_index:]))
+                        new_line.append('<span class="value">' + (' ').join(line_parts[line_index:]) + '</span>')
+                    line_index = line_length
+                if negate and line_index == line_length:
+                    if isinstance(parsed_root, list):
+                        parsed_root.append({})
+                        parsed_root = parsed_root[-1]
                     parsed_root['negate'] = True
             lines[lines_index] = (' ').join(new_line)
-            if not lines_index + 1 >= lines_length - 1:
+
+            if lines_index + 2 < lines_length:
                 if lines[lines_index + 1 ].startswith(' '):
+                    lines_index += 1
                     context_lines = []
-                    start_line = lines_index + 1
-                    while lines[lines_index + 1].startswith(" "):
-                        context_lines.append(lines[lines_index + 1].strip())
+                    start_line = lines_index
+                    while lines[lines_index].startswith(" "):
+                        context_lines.append(lines[lines_index].strip())
+                        #watch for EOF
+                        if lines_index == lines_length - 1 :
+                            lines_index += 1
+                            break
                         lines_index += 1
-                    dicts = [d for d in current_root if isinstance(d,dict)]
+                    if current_root:
+                        dicts = [d for d in current_root if isinstance(d,dict)]
+                    else: dicts = []
+                    context = None
                     for entry in dicts:
                         for key in entry:
                             if key == 'context':
@@ -164,10 +207,18 @@ def parse(lines, global_keywords, prepend = None):
                         result = parse(context_lines, context, True)
                         for line in result['config']:
                             line = " " + line
-                        lines[start_line:lines_index + 1] = result['config']
-                        if 'lines' in parsed_root:
-                            parsed_root['lines'][-1]['context'] = result['parsed']
+                        print "took", len(context_lines)
+                        print "are", context_lines
+                        print "before", len(lines)
+                        print "result_length", len(result['config'])
+                        print "swapping", len(lines[start_line:lines_index])
+                        lines[start_line:lines_index] = result['config']
+                        print "after", len(lines)
+
+                        if 'values' in parsed_root:
+                            parsed_root['values'][-1]['context'] = result['parsed']
                         else:
+                            print lines[start_line]
                             parsed_root['context'] = result['parsed']
                     lines_index -= 1
         lines_index += 1

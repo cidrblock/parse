@@ -27,6 +27,12 @@ global_keywords:
     - $action
     - $network
     - $netmask
+  call-home:
+    context:
+      alert-group:
+  class-map:
+  - $match
+  - $name
   clock:
     timezone:
   control-plane:
@@ -40,36 +46,48 @@ global_keywords:
   hostname:
     $name:
   interface:
-    $name:
-      context:
-        bandwidth:
-        channel-group:
-        - $id
-        - mode
-        - $mode
-        description:
-        ip:
-          address:
-          - $ip
-          - $mask
+  - $name
+  - context:
+      bandwidth:
+      channel-group:
+      - $id
+      - mode
+      - $mode
+      description:
+      ip:
+        address:
+        - $ip
+        - $mask
+        helper-address:
+        - $address
         shutdown:
-        switchport:
-          mode:
-          - $modes
-          trunk:
-            allowed:
-              vlan:
-            encapsulation:
-            native:
-              vlan:
+      shutdown:
+      switchport:
+        mode:
+        - $modes
+        trunk:
+          allowed:
+            vlan:
+          encapsulation:
+          native:
+            vlan:
   ip:
     access-list:
+      extended:
+      - $name
+      - context:
+        - $action
+        - $protocol
+        - $source_network
+        - $source_mask
+        - $destination_net
+        - $destination_mask
       standard:
-        $name:
-          context:
-          - $action
-          - $ip
-          - $mask
+      - $name
+      - context:
+        - $action
+        - $source
+        - $dest
     domain-list:
     - $domains
     domain-name:
@@ -78,11 +96,11 @@ global_keywords:
     name-server:
     - $name_server
     prefix-list:
-      $name:
-      - $sequence
-      - $sequence
-      - $action
-      - $net_netmask
+    - $name
+    - $sequence
+    - $sequence
+    - $action
+    - $net_netmask
     route:
     - $network
     - $netmask
@@ -92,63 +110,76 @@ global_keywords:
     tacacs:
       source-interface:
       - $interface
+    wccp:
+    - $number
   line:
-    $type:
-    - $start
-    - $finish
+  - $type
+  - $start
+  - $finish
+  - context:
+      exec-timeout:
+      password:
+      transport:
+        input:
+        output:
+      login:
+      access-class:
+      excape-character:
   logging:
     buffered:
-      $level:
     console:
-      $level:
     facility:
       $facility_type:
     monitor:
-      $level:
+  mls:
   ntp:
     server:
-      $ip:
+    - $ip
     source:
-      $interface:
+    - $interface
+  redundancy:
+    context:
+      keepalive-enable:
+      mode:
+      main-cpu:
+      auto-sync:
   route-map:
-  - $name
-  - $action
-  - $sequence
-  - context:
-      match:
-      set:
-  router:
-    $protocol:
-    - $process_id
+    $name:
+    - $action
+    - $sequence
     - context:
-        distribute-list:
-        - $name
-        - $direction
-        summary-address:
-        - $network
-        - $netmask
-        passive-interface:
-          $interface:
-        router-id:
-        log-adjacency-changes:
-        auto-cost:
-          reference-bandwidth:
-            reference_bandwidth:
-        redistribute:
-        - $protocol
-        - $process_id
-        - remainder: qualifiers
-        network:
-        - $network
-        - $mask
-        - $area
-        - $area
+        match:
+        set:
+  router:
+  - $protocol
+  - $process_id
+  - $vrf
+  - $vrf_name
+  - context:
+      auto-cost:
+      distribute-list:
+      - $name
+      - $direction
+      log-adjacency-changes:
+      network:
+      - $network
+      - $mask
+      - $area
+      - $area
+      passive-interface:
+      - $interface
+      redistribute:
+      - $protocol
+      - $process_id
+      router-id:
+      summary-address:
+      - $network
+      - $netmask
   service:
     pad:
     password-encryption:
     timestamps:
-      $type:
-      - $modifiers
+    - $type
   snmp-server:
     community:
     - $community_string
@@ -177,3 +208,9 @@ global_keywords:
   - $encryption
   - $password
   vlan:
+  - $number
+  - context:
+      name:
+  vtp:
+    domain:
+    mode:
