@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="css/app.css">
     <link rel="stylesheet" href="bower_components/highlightjs/styles/github-gist.css">
 
-
     <script type="text/javascript" src="bower_components/ace-builds/src-min-noconflict/ace.js"></script>
     <script type="text/javascript" src="bower_components/angular/angular.js"></script>
     <script type="text/javascript" src="bower_components/angular-sanitize/angular-sanitize.js"></script>
@@ -21,9 +20,6 @@
     <script type="text/javascript" src="bower_components/angular-highlightjs/angular-highlightjs.js"></script>
 
     <script>hljs.initHighlightingOnLoad();</script>
-
-    <script type="text/javascript" src="js/js-yaml.min.js"></script>
-    <script type="text/javascript" src="js/app.js"></script>
 
 </head>
 <body ng-controller="mainController">
@@ -44,7 +40,11 @@ mainController.$inject = ["$scope", "$http", "$sce", "$log", "$window"];
 
 function mainController($scope, $http, $sce, $log, $window) {
   $scope.result1 = '';
-  $scope.result2 = '{ foo: bar }';
+  $scope.result2 = `
+  SHORTCUT KEYS:
+  Ctrl-shift-r, Command-shift-r: submit
+  Ctrl-shift-s, Command-shift-s: sort
+  `;
   $scope.config = '';
   $scope.template ='';
   $scope.configOptions = {
@@ -94,7 +94,6 @@ function mainController($scope, $http, $sce, $log, $window) {
     $http.post("/api/parse", data)
       .then(
          function(response){
-           console.log(response.data)
            $scope.result1 = response.data.config
            $scope.result2 = response.data.result
          },
@@ -110,7 +109,6 @@ function mainController($scope, $http, $sce, $log, $window) {
     $http.post("/api/sort", data)
       .then(
          function(response){
-           console.log(response.data)
            $scope.template = response.data.template
          },
          function(response){
@@ -119,10 +117,19 @@ function mainController($scope, $http, $sce, $log, $window) {
       );
   };
   var init = function () {
-    $http.get("seassccrt005.starbucks.net.cfg")
+    $http.get("configs/sample.cfg")
       .then(
          function(response){
            $scope.config = response.data;
+         },
+         function(response){
+           console.log(response)
+         }
+      );
+    $http.get("parsers/ios.yaml")
+      .then(
+         function(response){
+           $scope.template = response.data;
          },
          function(response){
            console.log(response)

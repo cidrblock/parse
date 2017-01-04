@@ -1,4 +1,4 @@
-#!flask/bin/python
+#!/usr/bin/env python
 import re
 import json
 from flask import Flask, render_template, request, url_for, jsonify
@@ -96,7 +96,7 @@ def parse(lines, global_keywords, prepend = None):
                             wildcard = True
                             wildcard_actual = vars[0]
                             wildcard_parsed = vars[0][1:]
-                    if 'remainder'in current_root:
+                    if 'remainder' in current_root:
                         remainer_specified = True
                         remainder_word = current_root['remainder']
                 if crt == 'list':
@@ -107,9 +107,9 @@ def parse(lines, global_keywords, prepend = None):
                             wildcard = True
                             wildcard_actual = cr_strings[line_index - depth]
                             wildcard_parsed = cr_strings[line_index - depth][1:]
-                    else:
-                        remainer_specified = True
-                        for cr_dict in cr_dicts:
+                    for cr_dict in cr_dicts:
+                        if 'remainder' in cr_dict.keys():
+                            remainer_specified = True
                             remainder_word = cr_dict.get('remainder', remainder_word)
                 if current_root:
                     if crt == 'dict' and working_word in current_root:
@@ -207,18 +207,17 @@ def parse(lines, global_keywords, prepend = None):
                         result = parse(context_lines, context, True)
                         for line in result['config']:
                             line = " " + line
-                        print "took", len(context_lines)
-                        print "are", context_lines
-                        print "before", len(lines)
-                        print "result_length", len(result['config'])
-                        print "swapping", len(lines[start_line:lines_index])
+                        # print "took", len(context_lines)
+                        # print "are", context_lines
+                        # print "before", len(lines)
+                        # print "result_length", len(result['config'])
+                        # print "swapping", len(lines[start_line:lines_index])
                         lines[start_line:lines_index] = result['config']
-                        print "after", len(lines)
+                        # print "after", len(lines)
 
                         if 'values' in parsed_root:
                             parsed_root['values'][-1]['context'] = result['parsed']
                         else:
-                            print lines[start_line]
                             parsed_root['context'] = result['parsed']
                     lines_index -= 1
         lines_index += 1

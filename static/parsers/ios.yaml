@@ -27,6 +27,8 @@ global_keywords:
     - $action
     - $network
     - $netmask
+  boot-end-marker:
+  boot-start-marker:
   call-home:
     context:
       alert-group:
@@ -43,6 +45,9 @@ global_keywords:
     secret:
     - $encryption_type
     - $encrypted_password
+  gatekeeper:
+    context:
+    - $shutdown
   hostname:
     $name:
   interface:
@@ -54,6 +59,7 @@ global_keywords:
       - mode
       - $mode
       description:
+      duplex:
       ip:
         address:
         - $ip
@@ -62,6 +68,7 @@ global_keywords:
         - $address
         shutdown:
       shutdown:
+      speed:
       switchport:
         mode:
         - $modes
@@ -88,10 +95,14 @@ global_keywords:
         - $action
         - $source
         - $dest
+    admission:
+    auth-proxy:
+    domain:
     domain-list:
     - $domains
     domain-name:
       $domain_name:
+    forward-protocol:
     http:
     name-server:
     - $name_server
@@ -117,20 +128,28 @@ global_keywords:
   - $start
   - $finish
   - context:
+      access-class:
+      excape-character:
       exec-timeout:
+      logging:
+      login:
       password:
+      privilege:
+      - $level
+      - $level
       transport:
         input:
         output:
-      login:
-      access-class:
-      excape-character:
   logging:
     buffered:
     console:
     facility:
       $facility_type:
     monitor:
+  memory-size:
+  - $type
+  - $number
+  mgcp:
   mls:
   ntp:
     server:
@@ -139,10 +158,10 @@ global_keywords:
     - $interface
   redundancy:
     context:
-      keepalive-enable:
-      mode:
-      main-cpu:
       auto-sync:
+      keepalive-enable:
+      main-cpu:
+      mode:
   route-map:
     $name:
     - $action
@@ -157,10 +176,17 @@ global_keywords:
   - $vrf_name
   - context:
       auto-cost:
+      auto-summary:
+      bgp:
+        log-neighbor-changes:
       distribute-list:
       - $name
       - $direction
       log-adjacency-changes:
+      neighbor:
+        $neighbor_ip:
+        - $keyword
+        - $value
       network:
       - $network
       - $mask
@@ -175,11 +201,13 @@ global_keywords:
       summary-address:
       - $network
       - $netmask
+      synchronization:
   service:
     pad:
     password-encryption:
     timestamps:
     - $type
+    - remainder: modifiers
   snmp-server:
     community:
     - $community_string
@@ -207,6 +235,7 @@ global_keywords:
   - $password
   - $encryption
   - $password
+  version:
   vlan:
   - $number
   - context:

@@ -1,6 +1,7 @@
-# Subnetter
+# Network device config parser
 
-Subnetter is a simple network visualization and IP schema design aid.  Given a yaml file describing the hierarchy of the network and it's subnets, a resulting json file will be created and a d3.js visualization.
+NDCP is a network device config parser. Given either a snippet of configuration or a full configuration along with a yaml file describing the config, a visual representation of the parsed config and resulting structured data file in yaml format will be presented.
+
 
 ![screenshot](https://github.com/cidrblock/subnetter/raw/master/screenshot.png)
 
