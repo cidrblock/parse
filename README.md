@@ -56,7 +56,7 @@ logging buffered informational
 
 !
 ```
-```
+```yaml
 config:
   remove_lines:
   - ^!.*$
@@ -69,7 +69,7 @@ global_keywords:
 
 Blank lines will be removed, and the parser will look for the the keyword `logging` followed by `buffered`.  The following result will be produced:
 
-```
+```yaml
 logging:
   buffered:
     values:
@@ -90,7 +90,7 @@ logging console informational
 logging monitor informational
 ```
 Template:
-```
+```yaml
 config:
   remove_lines:
   - ^!.*$
@@ -100,7 +100,7 @@ global_keywords:
   - $type
 ```
 Result:
-```
+```yaml
 logging:
 - type: buffered
   values:
@@ -126,7 +126,7 @@ service timestamps log datetime msec localtime show-timezone
 
 Template:
 
-```
+```yaml
 config:
   remove_lines:
   - ^!.*$
@@ -139,7 +139,7 @@ global_keywords:
 ```
 Result:
 
-```
+```yaml
 service:
   timestamps:
   - modify:
@@ -153,7 +153,8 @@ service:
 if the remainder keyword is plural (ends in s), the remainder will be split into a list of values rather than a string.
 
 Template:
-```
+
+```yaml
 config:
   remove_lines:
   - ^!.*$
@@ -165,7 +166,7 @@ global_keywords:
     - remainder: modifiers
 ```
 Result:
-```
+```yaml
 service:
   timestamps:
   - modifiers:
@@ -197,7 +198,7 @@ access-list 16 deny   10.2.0.0 0.0.0.255
 access-list 16 permit any
 ```
 Template:
-```
+```yaml
 config:
   remove_lines:
   - ^!.*$
@@ -210,7 +211,7 @@ global_keywords:
     - $src_mask
 ```
 Result:
-```
+```yaml
 access-list:
 - entries:
   - action: permit
@@ -247,7 +248,7 @@ ntp server 10.1.1.4 use-vrf green
 ntp server 10.1.1.5 use-vrf yellow
 ```
 Template:
-```
+```yaml
 config:
   remove_lines:
   - ^!.*$
@@ -260,7 +261,7 @@ global_keywords:
       - $vrf
 ```
 Result:
-```
+```yaml
 ntp:
   server:
   - entries:
@@ -312,7 +313,7 @@ interface GigabitEthernet2/10
  mls qos trust dscp
 ```
 Template:
-```
+```yaml
 config:
   remove_lines:
   - ^!.*$
@@ -354,7 +355,7 @@ global_keywords:
         - $src_mask
 ```
 Result:
-```
+```yaml
 interface:
 - context:
     description:
@@ -430,7 +431,7 @@ where `config` is the config to be parsed and `template` is the template to use.
 
 Both a config and result are returned.  The config will be in HTML format, the result is the yaml structured data.
 
-```
+```python
 #! /usr/bin/env python
 
 import requests
@@ -450,7 +451,7 @@ print json.dumps(yaml.load(response.json()['result']), sort_keys = True, indent 
 ```
 Result:
 
-```
+```json
 {
   "aaa": {
     "negate": true,
