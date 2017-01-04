@@ -422,6 +422,282 @@ All other parsing rules apply.
 
 Note: The 'trunk allowed' lines above are one of the use cases not covered, that is conditional keywords.  Two of the lines have the `add`, one does not.
 
+### Example 7:
+
+Conver a config to json using the API and python.  The backend is a REST API mounted at /api/parse which takes a POSTed json payload of `{'config': config, 'template': template}`
+
+where `config` is the config to be parsed and `template` is the template to use.
+
+Both a config and result are returned.  The config will be in HTML format, the result is the yaml structured data.
+
+```
+#! /usr/bin/env python
+
+import requests
+import json
+import yaml
+
+config = open('sample.cfg', 'r').read()
+template = open('ios.yaml', 'r').read()
+
+url = 'http://localhost:5000/api/parse'
+payload = {'config': config, 'template': template}
+headers = {'content-type': 'application/json'}
+
+response = requests.post(url, data=json.dumps(payload), headers=headers)
+
+print json.dumps(yaml.load(response.json()['result']), sort_keys = True, indent = 4)
+```
+Result:
+
+```
+{
+  "aaa": {
+    "negate": true,
+    "values": [
+      "new-model"
+    ]
+  },
+  "boot-end-marker": {},
+  "boot-start-marker": {},
+  "control-plane": {},
+  "gatekeeper": {
+    "context": [
+      {
+        "shutdown": "shutdown"
+      }
+    ]
+  },
+  "hostname": [
+    {
+      "entries": [],
+      "name": "BORDER_1"
+    }
+  ],
+  "interface": [
+    {
+      "context": {
+        "duplex": {
+          "values": [
+            "auto"
+          ]
+        },
+        "ip": {
+          "address": [
+            {
+              "ip": "10.0.0.1",
+              "mask": "255.255.255.0"
+            }
+          ]
+        },
+        "speed": {
+          "values": [
+            "auto"
+          ]
+        }
+      },
+      "name": "FastEthernet0/0"
+    },
+    {
+      "context": {
+        "duplex": {
+          "values": [
+            "auto"
+          ]
+        },
+        "ip": {
+          "address": [
+            {
+              "ip": "192.168.0.1",
+              "mask": "255.255.255.0"
+            }
+          ]
+        },
+        "speed": {
+          "values": [
+            "auto"
+          ]
+        }
+      },
+      "name": "FastEthernet0/1"
+    }
+  ],
+  "ip": {
+    "admission": {
+      "values": [
+        "max-nodata-conns 3"
+      ]
+    },
+    "auth-proxy": {
+      "values": [
+        "max-nodata-conns 3"
+      ]
+    },
+    "domain": {
+      "negate": true,
+      "values": [
+        "lookup",
+        "name lab.local"
+      ]
+    },
+    "forward-protocol": {
+      "values": [
+        "nd"
+      ]
+    },
+    "http": {
+      "negate": true,
+      "values": [
+        "server",
+        "secure-server"
+      ]
+    },
+    "values": [
+      "cef"
+    ]
+  },
+  "line": [
+    {
+      "context": {
+        "exec-timeout": {
+          "values": [
+            "0 0"
+          ]
+        },
+        "logging": {
+          "values": [
+            "synchronous"
+          ]
+        },
+        "privilege": [
+          {
+            "level": "15"
+          }
+        ]
+      },
+      "start": "0",
+      "type": "con"
+    },
+    {
+      "context": {
+        "exec-timeout": {
+          "values": [
+            "0 0"
+          ]
+        },
+        "logging": {
+          "values": [
+            "synchronous"
+          ]
+        },
+        "privilege": [
+          {
+            "level": "15"
+          }
+        ]
+      },
+      "start": "0",
+      "type": "aux"
+    },
+    {
+      "context": {
+        "login": {}
+      },
+      "finish": "4",
+      "start": "0",
+      "type": "vty"
+    }
+  ],
+  "memory-size": [
+    {
+      "number": "5",
+      "type": "iomem"
+    }
+  ],
+  "mgcp": {
+    "values": [
+      "behavior g729-variants static-pt"
+    ]
+  },
+  "router": [
+    {
+      "context": {
+        "auto-summary": {
+          "negate": true
+        },
+        "bgp": {
+          "log-neighbor-changes": {}
+        },
+        "neighbor": [
+          {
+            "entries": [
+              {
+                "keyword": "remote-as",
+                "value": "64530"
+              }
+            ],
+            "neighbor_ip": "10.0.0.2"
+          },
+          {
+            "entries": [
+              {
+                "keyword": "remote-as",
+                "value": "64520"
+              },
+              {
+                "keyword": "next-hop-self"
+              }
+            ],
+            "neighbor_ip": "192.168.0.2"
+          }
+        ],
+        "network": [
+          {
+            "network": "192.168.0.0"
+          }
+        ],
+        "synchronization": {
+          "negate": true
+        }
+      },
+      "process_id": "64520",
+      "protocol": "bgp"
+    }
+  ],
+  "service": {
+    "password-encryption": {
+      "negate": true
+    },
+    "timestamps": [
+      {
+        "modifiers": [
+          "datetime",
+          "msec"
+        ],
+        "type": "debug"
+      },
+      {
+        "modifiers": [
+          "datetime",
+          "msec"
+        ],
+        "type": "log"
+      }
+    ]
+  },
+  "values": [
+    "end"
+  ],
+  "version": {
+    "values": [
+      "12.4"
+    ]
+  }
+}
+```
+
+The result could then be stored in a nosql db, maintained, and converted back into config using ansible and jinja.
+
 ## Built With
 
 * angular

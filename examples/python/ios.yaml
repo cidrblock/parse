@@ -1,0 +1,245 @@
+config:
+  remove_lines:
+  - ^!.*$
+  - ^$
+global_keywords:
+  aaa:
+    accounting:
+    - $type
+    - $list_name
+    - $event
+    - remainder: methods
+    authentication:
+    - $type
+    - $list-name
+    - remainder: methods
+    authorization:
+      commands:
+      - $priv
+      - $list_name
+      - remainder: methods
+      exec:
+      - $list_name
+      - remainder: methods
+    session-id:
+  access-list:
+    $number:
+    - $action
+    - $network
+    - $netmask
+  boot-end-marker:
+  boot-start-marker:
+  call-home:
+    context:
+      alert-group:
+  class-map:
+  - $match
+  - $name
+  clock:
+    timezone:
+  control-plane:
+  enable:
+    password:
+    - $encryption_type
+    - $encrypted_password
+    secret:
+    - $encryption_type
+    - $encrypted_password
+  gatekeeper:
+    context:
+    - $shutdown
+  hostname:
+    $name:
+  interface:
+  - $name
+  - context:
+      bandwidth:
+      channel-group:
+      - $id
+      - mode
+      - $mode
+      description:
+      duplex:
+      ip:
+        address:
+        - $ip
+        - $mask
+        helper-address:
+        - $address
+        shutdown:
+      shutdown:
+      speed:
+      switchport:
+        mode:
+        - $modes
+        trunk:
+          allowed:
+            vlan:
+          encapsulation:
+          native:
+            vlan:
+  ip:
+    access-list:
+      extended:
+      - $name
+      - context:
+        - $action
+        - $protocol
+        - $source_network
+        - $source_mask
+        - $destination_net
+        - $destination_mask
+      standard:
+      - $name
+      - context:
+        - $action
+        - $source
+        - $dest
+    admission:
+    auth-proxy:
+    domain:
+    domain-list:
+    - $domains
+    domain-name:
+      $domain_name:
+    forward-protocol:
+    http:
+    name-server:
+    - $name_server
+    prefix-list:
+    - $name
+    - $sequence
+    - $sequence
+    - $action
+    - $net_netmask
+    route:
+    - $network
+    - $netmask
+    - $nexthop
+    routing:
+    subnet-zero:
+    tacacs:
+      source-interface:
+      - $interface
+    wccp:
+    - $number
+  line:
+  - $type
+  - $start
+  - $finish
+  - context:
+      access-class:
+      excape-character:
+      exec-timeout:
+      logging:
+      login:
+      password:
+      privilege:
+      - $level
+      - $level
+      transport:
+        input:
+        output:
+  logging:
+    buffered:
+    console:
+    facility:
+      $facility_type:
+    monitor:
+  memory-size:
+  - $type
+  - $number
+  mgcp:
+  mls:
+  ntp:
+    server:
+    - $ip
+    source:
+    - $interface
+  redundancy:
+    context:
+      auto-sync:
+      keepalive-enable:
+      main-cpu:
+      mode:
+  route-map:
+    $name:
+    - $action
+    - $sequence
+    - context:
+        match:
+        set:
+  router:
+  - $protocol
+  - $process_id
+  - $vrf
+  - $vrf_name
+  - context:
+      auto-cost:
+      auto-summary:
+      bgp:
+        log-neighbor-changes:
+      distribute-list:
+      - $name
+      - $direction
+      log-adjacency-changes:
+      neighbor:
+        $neighbor_ip:
+        - $keyword
+        - $value
+      network:
+      - $network
+      - $mask
+      - $area
+      - $area
+      passive-interface:
+      - $interface
+      redistribute:
+      - $protocol
+      - $process_id
+      router-id:
+      summary-address:
+      - $network
+      - $netmask
+      synchronization:
+  service:
+    pad:
+    password-encryption:
+    timestamps:
+    - $type
+    - remainder: modifiers
+  snmp-server:
+    community:
+    - $community_string
+    contact:
+    location:
+    view:
+    - $name
+    - $oid
+    - $action
+  spanning-tree:
+    mode:
+      $mode:
+  tacacs-server:
+    directed-request:
+    host:
+    - $hostip
+    key:
+    - $encryption_type
+    - $encrypted_password
+    timeout:
+      $value:
+  udld:
+  username:
+  - $username
+  - $password
+  - $encryption
+  - $password
+  version:
+  vlan:
+  - $number
+  - context:
+      name:
+  vtp:
+    domain:
+    mode:
